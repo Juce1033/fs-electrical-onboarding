@@ -13,7 +13,10 @@ public:
     /*
         Start of public variables
     */
+    bool apps_disagree_implaus = false;
+    bool apps_range_implaus = false;
 
+    int16_t torque_output;
     /*
         End of public variables
     */
@@ -37,7 +40,9 @@ private:
     float apps2_voltage;
     float apps1_position;
     float apps2_position;
-    int16_t torque_output;
+
+    Timer apps_disagree_timer;
+    Timer apps_range_timer;
     
 
     /*

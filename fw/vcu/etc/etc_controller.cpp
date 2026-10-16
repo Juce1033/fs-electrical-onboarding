@@ -3,6 +3,7 @@
 //
 
 #include "etc_controller.h"
+#include <cmath>
 
 // Assign appropriate GPIO objects depending on pin parameters
 ETCController::ETCController(PinName APPS1_pin, PinName APPS2_pin)
@@ -77,13 +78,34 @@ void ETCController::update_implausibilities() {
     /*
         Start of implaus logic checking.
     */
-
-    if (in_range(apps1_voltage, APPS1_MIN_VOLTAGE, APPS1_MAX_VOLTAGE) == false) {
-        apps1_voltage = clamp(apps1_voltage);
+    apps_disagree_implaus = false;
+    apps_range_implaus = false; 
+    //Detects if the two position values for the sensors don't match by more than 10% for more than 100ms
+    bool problem_position = fabs(apps1_position - apps2_position) > 0.1f;
+    if (problem_position) {
+        apps_disagree_timer.start();
+        if (apps_disagree_timer.elapsed_time() > 100ms) {
+            apps_disagree_implaus = 1;
+        }
+    } else {
+        apps_disagree_timer.stop();
+        apps_disagree_timer.reset();
     }
 
-    if (in_range(apps2_voltage, APPS2_MIN_VOLTAGE, APPS2_MAX_VOLTAGE)) {
-        apps2_voltage = clamp(apps2_voltage);
+    //Detects if the voltages for the sensors are outside of their range for more than 100ms
+    bool problem_range = !in_range(apps1_voltage, APPS1_MIN_VOLTAGE, APPS1_MAX_VOLTAGE) || !in_range(apps2_voltage, APPS2_MIN_VOLTAGE, APPS2_MAX_VOLTAGE);
+    if (problem_range) {
+        apps_range_timer.start();
+        if (apps_range_timer.elapsed_time() > 100ms) {
+            apps_range_implaus = 1;
+        }
+    } else {
+        apps_range_timer.stop();
+        apps_range_timer.reset();
+    }
+
+    if (apps_disagree_implaus || apps_range_implaus) {
+        torque_output = 0;
     }
     /*
         End of implaus logic checking.
