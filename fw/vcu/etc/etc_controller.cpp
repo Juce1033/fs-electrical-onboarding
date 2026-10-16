@@ -5,19 +5,35 @@
 #include "etc_controller.h"
 
 // Assign appropriate GPIO objects depending on pin parameters
-ETCController::ETCController(PinName APPS1_pin, PinName APPS2_pin) {}
+ETCController::ETCController(PinName APPS1_pin, PinName APPS2_pin)
+    : apps1(APPS1_pin), apps2(APPS2_pin) {
 
+}
 /* 
     Nice function to write which returns a wrapped version of the
     value given between 0 and 1 (-0.1 => 0, 10 => 1, 0.3 => 0.3).
 */
-float ETCController::clamp(float value) {}
+float ETCController::clamp(float value) {
+    if (value > 1) {
+        value = 1;
+    } else if (value < 0) {
+        value = 0;
+    }
+    return value;
+}
+
 
 /*
     Simple function to write which returns a bool of true or false
     depending on whether low <= value <= high is true.
 */
-bool ETCController::in_range(float value, float low, float high) {}
+bool ETCController::in_range(float value, float low, float high) {
+    if (value >= low && value <= high) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 /*
     Complicated method with the goal of refreshing voltages,
@@ -36,6 +52,13 @@ void ETCController::update_state() {
         include your own pedal mapping to make it non linear!
     */
 
+    apps1_voltage = apps1.read() * 3.3f;
+    apps2_voltage = apps2.read() * 3.3f;
+    apps1_position = clamp(((apps1_voltage-APPS1_MIN_VOLTAGE)/(APPS1_MAX_VOLTAGE-APPS1_MIN_VOLTAGE)));
+    apps2_position = clamp(((apps2_voltage-APPS2_MIN_VOLTAGE)/(APPS2_MAX_VOLTAGE-APPS2_MIN_VOLTAGE)));
+
+    float average_position = ((apps1_position) + (apps2_position)) / 2;
+    torque_output = (int16_t)(average_position * MAX_TORQUE);
 
 
     /*
@@ -55,8 +78,13 @@ void ETCController::update_implausibilities() {
         Start of implaus logic checking.
     */
 
+    if (in_range(apps1_voltage, APPS1_MIN_VOLTAGE, APPS1_MAX_VOLTAGE) == false) {
+        apps1_voltage = clamp(apps1_voltage);
+    }
 
-
+    if (in_range(apps2_voltage, APPS2_MIN_VOLTAGE, APPS2_MAX_VOLTAGE)) {
+        apps2_voltage = clamp(apps2_voltage);
+    }
     /*
         End of implaus logic checking.
     */

@@ -14,8 +14,6 @@ public:
         Start of public variables
     */
 
-
-
     /*
         End of public variables
     */
@@ -32,6 +30,14 @@ private:
         Start of private variables
     */
 
+    AnalogIn apps1;
+    AnalogIn apps2;
+    
+    float apps1_voltage;
+    float apps2_voltage;
+    float apps1_position;
+    float apps2_position;
+    int16_t torque_output;
     
 
     /*
